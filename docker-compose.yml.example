@@ -1,0 +1,57 @@
+version: '3.7'
+
+# Networks
+networks:
+  # Internal network
+  internal:
+    driver: bridge
+
+# Volumes
+volumes:
+  # MySQL volume
+  todo-mysql_data:
+    driver: local
+
+# Services
+services:
+
+  # MySQL
+  todo-mysql:
+    image: mysql:5.7
+    container_name: todo-mysql
+    networks:
+      - internal
+    volumes:
+      - .:/var/www/app
+      - todo-mysql_data:/var/lib/mysql
+    working_dir: /var/www/app
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=todo
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pass
+    ports:
+      - 3306:3306
+
+  # Nginx
+  todo-nginx:
+    image: webdevops/php-nginx:8.0
+    container_name: todo-nginx
+    networks:
+      - internal
+    depends_on:
+      - todo-mysql
+    links:
+      - todo-mysql
+    volumes:
+      - .:/var/www/app
+    working_dir: /var/www/app
+    environment:
+      - WEB_DOCUMENT_ROOT=/var/www/app/public
+      - PHP_DATE_TIMEZONE=UTC
+      - PHP_DISPLAY_ERRORS=0
+      - WEB_DOCUMENT_INDEX=index.php
+    expose:
+      - 9090
+    ports:
+      - 8086:80
